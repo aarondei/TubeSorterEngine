@@ -1,0 +1,178 @@
+package com.example.coloredtubesorter.Logic;
+
+import com.example.coloredtubesorter.Elements.ColorEnum;
+import com.example.coloredtubesorter.Elements.Tube;
+import javafx.scene.shape.Rectangle;
+
+import java.util.*;
+
+public class Sorter {
+
+    private static Sorter instance;
+
+    private List<Tube> tubeList;
+    private Set<String> visited = new HashSet<>();
+    private StringBuilder log = new StringBuilder();
+
+    private Sorter(List<Tube> tubeList) {
+        this.tubeList = tubeList;
+    }
+
+    public static Sorter getInstance(List<Tube> tubeList) {
+        if (instance == null) {
+            instance = new Sorter(tubeList);
+        }
+        return instance;
+    }
+
+    public boolean solve() {
+
+        try {
+            String currentState = serializeState(tubeList);
+            if (visited.contains(currentState)) return false;
+            visited.add(currentState);
+
+            if (isSolved()) return true;
+
+            for (Tube from : tubeList) {
+
+                if (from.isEmpty()) continue;
+
+                for (Tube to : tubeList) {
+
+                    if (from.equals(to) || !canPour(from, to)) continue;
+                    if (to.isEmpty() && findBetterMove(from)) continue;
+                    if (!to.isEmpty() && !pruneOverfillMoves(from, to)) continue;
+
+                    List<Rectangle> poured = pour(from, to);
+
+                    if (solve()) {
+                        log.append("Tube ").append(from.getName()).append(" -> Tube ").append(to.getName()).append("\n");
+                        return true;
+                    }
+
+                    undo(from, to, poured);
+                }
+            }
+            return false;
+
+        } catch (Exception e) {
+            System.err.println("Unexpected crash");
+            e.getMessage();
+            return false;
+        }
+    }
+
+    private boolean findBetterMove(Tube from) {
+        ColorEnum fromTop = getRectColor(from.getStackTube().top());
+
+        // prioritize same color, non-empty to tubes
+        for (Tube t : tubeList) {
+            if (t != from && !t.isFull() && !t.isEmpty()) {
+                ColorEnum tTop = getRectColor((t.getStackTube().top()));
+                if (tTop == fromTop) return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean pruneOverfillMoves(Tube from, Tube to) {
+
+        if (from.isEmpty() ||to.isFull()) return false;
+
+        ColorEnum fromTop = getRectColor(from.getStackTube().top());
+        ColorEnum toTop = getRectColor(to.getStackTube().top());
+
+        if (fromTop != toTop && !to.isEmpty()) return false;
+
+        int fromLayers = 0;
+        for (Rectangle r : from.getStackTube().getStackLayers()) {
+           if (r.getUserData() == fromTop) fromLayers++;
+           else break;
+        }
+
+        // avoid pouring same color, overfilling tubes
+        return (fromLayers + to.getLiquidCount()) <= 4;
+    }
+
+    private String serializeState(List<Tube> tubes) {
+        StringBuilder sb = new StringBuilder();
+
+        for (Tube t : tubes) {
+            for (Rectangle r : t.getStackTube().getStackLayers()) {
+                ColorEnum color = getRectColor(r);
+                sb.append(color.name()).append(",");
+            }
+            sb.append("|");
+        }
+
+        return sb.toString();
+    }
+
+    private boolean isSolved() {
+
+        for (Tube t : tubeList) {
+
+            if (t.isEmpty()) continue;
+
+            // compare top's color with all layers colors
+            ColorEnum topColor = getRectColor(t.getStackTube().top());
+            for (Rectangle r : t.getStackTube().getStackLayers()) {
+                if (getRectColor(r) != topColor) return false;
+            }
+
+            if (!t.isFull()) return false;
+        }
+
+        return true;
+    }
+
+    private boolean canPour(Tube from, Tube to) {
+        // can pour = tops match color, to tube is not Full, from Tube is not empty, to tube is empty
+        if (from.isEmpty() || to.isFull()) return false;
+
+        if (to.isEmpty()) return true;
+
+        ColorEnum fromTop = getRectColor(from.getStackTube().top());
+        ColorEnum toTop = getRectColor(to.getStackTube().top());
+
+        return fromTop.equals(toTop);
+    }
+
+    private List<Rectangle> pour(Tube from, Tube to) {
+
+        List<Rectangle> poured = new ArrayList<>();
+
+        while (canPour(from, to)) {
+            Rectangle r = from.pourLiquid();
+            to.fillLiquid(r);
+            poured.add(r);
+        }
+        return poured;
+    }
+
+    private void undo(Tube from, Tube to, List<Rectangle> poured) {
+
+        for (int i = poured.size() -1; i >= 0; i--) {
+            to.pourLiquid();
+            from.fillLiquid(poured.get(i));
+        }
+    }
+
+    private ColorEnum getRectColor(Rectangle r) {
+        return (ColorEnum) r.getUserData();
+    }
+
+    public String extractRecord() {
+
+        String[] lines = log.toString().split("\n");
+        StringBuilder finalized = new StringBuilder();
+
+        for (int i = lines.length -1, j = 1; i >= 0; i--, j++) {
+            finalized.append(j).append(": ").append(lines[i]).append("\n");
+        }
+
+        return finalized.toString();
+    }
+}
