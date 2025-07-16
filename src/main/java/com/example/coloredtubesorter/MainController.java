@@ -2,7 +2,7 @@ package com.example.coloredtubesorter;
 
 import com.example.coloredtubesorter.Elements.ColorEnum;
 import com.example.coloredtubesorter.Elements.Tube;
-import com.example.coloredtubesorter.Logic.Sorter;
+import com.example.coloredtubesorter.Logic.Sort.Sorter;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
@@ -18,7 +18,7 @@ import java.util.Map;
 
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
-import javafx.stage.Stage;
+import javafx.scene.text.Text;
 
 
 public class MainController extends BaseController {
@@ -29,7 +29,7 @@ public class MainController extends BaseController {
     private AnchorPane apMainPane;
 
     private int tubeNum;
-    private List<Tube> tubeList = new ArrayList<>();
+    private final List<Tube> tubeList = new ArrayList<>();
     private int currentTubeIndex = 0;
 
     private boolean isLocked = false;
@@ -40,6 +40,8 @@ public class MainController extends BaseController {
     }
 
     public void postInit() {
+        tfStatus.setFocusTraversable(false);
+        tfStatus.setMouseTransparent(true);
         createTube();
         highlightTube(tubeList.getFirst(), true);
     }
@@ -48,14 +50,15 @@ public class MainController extends BaseController {
     private void createTube() {
 
         // generate tube dimensions
-        Map<String, Double> stng = new HashMap<>();
-        configTubeLayout(stng);
+        Map<String, Double> layoutSetting = new HashMap<>();
+        configTubeLayout(layoutSetting);
 
         // create tubes
         for (int i = 0; i < tubeNum; i++) {
             Tube tube = new Tube();
-            setTubeVisuals(tube);
-            setTubeLayout(tube, stng);
+            setTubeDesign(tube);
+            setTubeLayout(tube, layoutSetting);
+            setTubeLabel(tube);
 
             tubeList.add(tube);
             apMainPane.getChildren().add(tube.getContainer());
@@ -72,8 +75,9 @@ public class MainController extends BaseController {
         layoutSettings.put("x", layoutSettings.get("startX"));
         layoutSettings.put("y", layoutSettings.get("startY"));
     }
-    private void setTubeVisuals(Tube tube) {
+    private void setTubeDesign(Tube tube) {
 
+        // GUI
         VBox container = tube.getContainer();
 
         container.setSpacing(2);
@@ -82,19 +86,26 @@ public class MainController extends BaseController {
 
         highlightTube(tube, false);
     }
-    private void setTubeLayout(Tube tube, Map<String, Double> stng) {
+    private void setTubeLayout(Tube tube, Map<String, Double> layoutSetting) {
+        // GUI
         // row warp
-        if (stng.get("x") + 60 > stng.get("paneWidth")) {
-            stng.put("x", stng.get("startX"));
-            stng.put("y", stng.get("y") + stng.get("rowSpacing"));
+        if (layoutSetting.get("x") + 60 > layoutSetting.get("paneWidth")) {
+            layoutSetting.put("x", layoutSetting.get("startX"));
+            layoutSetting.put("y", layoutSetting.get("y") + layoutSetting.get("rowSpacing"));
         }
-        tube.getContainer().setLayoutX(stng.get("x"));
-        tube.getContainer().setLayoutY(stng.get("y"));
+        tube.getContainer().setLayoutX(layoutSetting.get("x"));
+        tube.getContainer().setLayoutY(layoutSetting.get("y"));
 
-        // set coordinates
-        tube.setCoordinates(stng.get("x"), stng.get("y"));
-
-        stng.put(("x"), stng.get("x") + stng.get("spacing"));
+        layoutSetting.put(("x"), layoutSetting.get("x") + layoutSetting.get("spacing"));
+    }
+    private void setTubeLabel(Tube tube) {
+        // GUI
+        Text label = new Text();
+        label.setText(String.valueOf(tube.getName()));
+        label.setLayoutX(tube.getContainer().getLayoutX());
+        label.setLayoutY(tube.getContainer().getLayoutY());
+        label.setFill(Color.GRAY);
+        apMainPane.getChildren().add(label);
     }
     public void highlightTube(Tube tube, boolean highlight) {
 
@@ -116,10 +127,9 @@ public class MainController extends BaseController {
             """);
         }
     }
-    private Rectangle createLiquid(Color color, Tube tube) {
+    private Rectangle createLiquid(Color color) {
 
-        Rectangle rect = new Rectangle(45, 25);
-        rect.setFill(color);
+        Rectangle rect = new Rectangle(45, 25, color);
         rect.setArcWidth(10);
         rect.setArcHeight(10);
 
@@ -155,7 +165,7 @@ public class MainController extends BaseController {
                 if (tube.isEmpty()) moveToPrevTube(tube);
                 return;
             }
-        };
+        }
 
         // color handling
         try {
@@ -163,7 +173,7 @@ public class MainController extends BaseController {
             Color fxColor = logicColor.getColor();
 
             // create and tag rect
-            Rectangle liquid = createLiquid(fxColor, tube);
+            Rectangle liquid = createLiquid(fxColor);
             liquid.setUserData(logicColor);
 
             // fill tube
@@ -197,17 +207,79 @@ public class MainController extends BaseController {
     @FXML
     public void onSolveClicked(ActionEvent actionEvent) {
 
+        if (isLocked) return;
+
         // locks pane
         isLocked = true;
-        for (Tube t : tubeList) highlightTube(t, false);
+        highlightTube(tubeList.get(currentTubeIndex), false);
 
-        // BACKTRACKING LOGIC BEGINS HERE
+        // PATHFINDING BEGINS HERE
         Sorter sorter = Sorter.getInstance(tubeList);
-        boolean solved = sorter.solve();
 
-        String record = sorter.extractRecord();
-        MainApplication.openShell(record);
+        long start = System.currentTimeMillis();
+        boolean solved = sorter.pathFind();
+        long end = System.currentTimeMillis();
 
-        tfStatus.setText(solved ? "Complete" : "Failed");
+        // measure BFS' elapsed time
+        System.out.println("Elapsed Time: " + (end - start) / 1000 + " second/s.");
+
+        // measure BFS' used memory
+        Runtime runtime = Runtime.getRuntime();
+        System.out.println("Used memory: " +
+                (runtime.totalMemory() - runtime.freeMemory()) / (1024 * 1024) + " MB");
+
+        // GUI results
+        tfStatus.setText(solved ? "Run: Success" : "Run: Failed");
+        if (solved) {
+            tfStatus.setStyle("""
+                    -fx-background-color: #80ef80;
+                    """);
+
+            // reconstruct winning state
+            apMainPane.getChildren().clear();
+            Map<String, Double> layoutSetting = new HashMap<>();
+            configTubeLayout(layoutSetting);
+
+            for (Tube t : sorter.extractState()) {
+                setTubeDesign(t);
+                setTubeLayout(t, layoutSetting);
+                setTubeLabel(t);
+                apMainPane.getChildren().add(t.getContainer());
+            }
+
+            // reconstruct winning move history
+            MainApplication.openShell(sorter.extractHistory());
+
+        } else {
+            tfStatus.setStyle("""
+                    -fx-background-color: #e54c38;
+                    """);
+        }
     }
+
+    public void onResetClick(ActionEvent actionEvent) {
+
+        tfStatus.clear();
+        tfStatus.setFocusTraversable(false);
+        tfStatus.setMouseTransparent(true);
+        tfStatus.setStyle("");
+        currentTubeIndex = 0;
+        isLocked = false;
+
+        for (Tube t : tubeList) {
+            t.resetTube();
+            highlightTube(t, false);
+        }
+
+        highlightTube(tubeList.getFirst(), true);
+    }
+
+    public void onSaveClick(ActionEvent actionEvent) {
+
+
+
+
+    }
+
+
 }

@@ -31,4 +31,15 @@ public enum ColorEnum {
     public static ColorEnum fromName(String name) {
         return ColorEnum.valueOf(name.toUpperCase());
     }
+    public static ColorEnum convertColorObj(Color c) {
+
+        for (ColorEnum ce : values()) {
+            if (Math.abs(c.getRed() - ce.getColor().getRed()) < 0.001 &&
+                    Math.abs(c.getGreen() - ce.getColor().getGreen()) < 0.001 &&
+                    Math.abs(c.getBlue() - ce.getColor().getBlue()) < 0.001) {
+                return ce;
+            }
+        }
+        throw new IllegalArgumentException("No matching ColorEnum for: " + c);
+    }
 }

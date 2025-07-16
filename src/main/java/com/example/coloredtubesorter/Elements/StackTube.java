@@ -33,9 +33,6 @@ public class StackTube {
             throw new RuntimeException();
         }
     }
-    public int size() {
-        return stack.size();
-    }
 
     public List<Rectangle> getStackLayers() {
         List<Rectangle> list = new ArrayList<>();
@@ -44,5 +41,9 @@ public class StackTube {
             list.add((Rectangle) n);
         }
         return list;
+    }
+
+    public void resetStackTube() {
+        stack.clear();
     }
 }

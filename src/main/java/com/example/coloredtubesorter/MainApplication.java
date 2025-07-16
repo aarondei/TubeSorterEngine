@@ -11,12 +11,15 @@ import java.io.IOException;
 public class MainApplication extends Application {
     private static Stage primaryStage;
 
+    // TODO FIX ERROR solvable scenario fails after resetting from a failed attempt
+    // TODO IMPLEMENT simulator
+
     @Override
     public void start(Stage stage) throws IOException {
         primaryStage = stage;
         FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("setup-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
-        stage.setTitle("Colored Tube Sorter");
+        stage.setTitle("Tube Sorter Cheat Engine");
         stage.setResizable(false);
         stage.setScene(scene);
         stage.show();
