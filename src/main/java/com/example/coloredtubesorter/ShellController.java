@@ -19,7 +19,11 @@ public class ShellController extends BaseController {
         raw = data.split("\n");
     }
 
-    public void track(int i) {
+    public void track(int i) throws ArrayIndexOutOfBoundsException {
         taShellArea.setText(taShellArea.getText() + raw[i] + "\n");
+    }
+
+    public TextArea getShellArea() {
+        return taShellArea;
     }
 }

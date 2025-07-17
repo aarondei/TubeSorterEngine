@@ -10,9 +10,7 @@ import java.io.IOException;
 
 public class MainApplication extends Application {
     private static Stage primaryStage;
-
-    // TODO FIX ERROR solvable scenario fails after resetting from a failed attempt
-    // TODO IMPLEMENT simulator
+    private static Stage shell;
 
     @Override
     public void start(Stage stage) throws IOException {
@@ -52,7 +50,9 @@ public class MainApplication extends Application {
     public static BaseController openLog(Object data) {
 
         try {
-            Stage shell = new Stage();
+            if (shell != null && shell.isShowing()) shell.close();
+
+            shell = new Stage();
             FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("shell-view.fxml"));
             Parent root = fxmlLoader.load();
 
@@ -61,7 +61,7 @@ public class MainApplication extends Application {
             controller.postInit();
 
             shell.setScene(new Scene(root));
-            shell.setX(primaryStage.getWidth());
+            shell.setX(primaryStage.getWidth() + primaryStage.getX());
             shell.setY(primaryStage.getY());
             shell.show();
 
@@ -70,5 +70,9 @@ public class MainApplication extends Application {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static void closeShell() {
+        if (shell != null && shell.isShowing()) shell.close();
     }
 }

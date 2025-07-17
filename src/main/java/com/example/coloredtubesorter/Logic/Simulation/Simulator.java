@@ -1,34 +1,34 @@
 package com.example.coloredtubesorter.Logic.Simulation;
 
+import com.example.coloredtubesorter.BaseController;
 import com.example.coloredtubesorter.Elements.Tube;
+import com.example.coloredtubesorter.Logic.Creator;
 import com.example.coloredtubesorter.Logic.Pourable;
+import com.example.coloredtubesorter.Logic.UtilityGUI;
+import com.example.coloredtubesorter.MainApplication;
 import com.example.coloredtubesorter.ShellController;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
-import javafx.geometry.Pos;
 import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Text;
+import javafx.stage.Stage;
 import javafx.util.Duration;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-public class Simulator implements Pourable {
+public class Simulator implements Pourable, Creator {
     private static Simulator instance;
 
     private final List<Tube> origTubeList;
-    private List<Tube> tubeList = new ArrayList<>();
     private final String moveHistory;
+
+    private List<Tube> copyTubeList;
+
+    Timeline timeline;
 
     private Simulator(List<Tube> origTubeList, String moveHistory) {
         this.origTubeList = origTubeList;
         this.moveHistory = moveHistory;
     }
-
     public static Simulator getInstance(List<Tube> tubeList, String moveHistory) {
         if (instance == null) {
             instance = new Simulator(tubeList, moveHistory);
@@ -36,40 +36,34 @@ public class Simulator implements Pourable {
         return instance;
     }
 
-    private void setupGUI(AnchorPane ap) {
-
-        if (!tubeList.isEmpty()) tubeList.clear();
-
-        Map<String, Double> layoutSetting = new HashMap<>();
-        configTubeLayout(layoutSetting);
-
-        for (int i = 0; i < origTubeList.size(); i++) {
-
-            // deep copy
-            tubeList.add(origTubeList.get(i).cloneTube());
-
-            Tube copy = tubeList.get(i);
-            setTubeDesign(copy);
-            setTubeLayout(copy, layoutSetting);
-            setTubeLabel(copy, ap);
-
-            ap.getChildren().add(copy.getContainer());
-        }
-    }
 
     public void simulate(AnchorPane apMainPane, ShellController controller) {
 
-        setupGUI(apMainPane);
+        linkSimulationToShellWindow(controller);
 
-        int[] i = {0};
+        apMainPane.getChildren().clear();
+        copyTubeList = createTube(apMainPane, origTubeList.size());
+
+        // SIMULATION BEGINS HERE
         String[] history = moveHistory.split("\n");
+        int[] i = {0};
 
-        Timeline timeline = new Timeline(
-                new KeyFrame(Duration.seconds(2), e -> {
+        timeline = new Timeline(
+                new KeyFrame(Duration.seconds(1.5), e -> {
+
                     if (i[0] < history.length) {
-                        controller.track(i[0]);
-                        String str = history[i[0]];
-                        List<Integer> move = decryptMove(str);
+
+                        List<Integer> move;
+
+                        try {
+                            controller.track(i[0]);
+                            String str = history[i[0]];
+                            move = decryptMove(str);
+
+                        } catch (ArrayIndexOutOfBoundsException ex) {
+                            return;
+                        }
+
                         applyMove(move.getFirst(), move.getLast());
                         i[0]++;
                     }
@@ -78,11 +72,26 @@ public class Simulator implements Pourable {
         timeline.setCycleCount(history.length);
         timeline.play();
     }
-    public void restart() {
 
+    public void setOnSimulationDone(Runnable callback) {
+        timeline.setOnFinished(e -> callback.run());
+    }
+    private void linkSimulationToShellWindow(ShellController controller) {
+
+        Stage shell = (Stage) controller.getShellArea().getScene().getWindow();
+        shell.setOnCloseRequest(e -> timeline.stop());
+    }
+    public void restart(AnchorPane apMainPane) {
+        copyTubeList.clear();
+        timeline = null;
+
+        // open log window
+        BaseController shell = MainApplication.openLog(moveHistory);
+        simulate(apMainPane, (ShellController) shell);
     }
 
-    private List<Integer> decryptMove(String str) {
+    private List<Integer> decryptMove(String str) throws ArrayIndexOutOfBoundsException {
+
         String[] raw = str.substring(str.indexOf(":") + 2).split("[^0-9]+");
         List<Integer> moves = new ArrayList<>();
 
@@ -93,13 +102,12 @@ public class Simulator implements Pourable {
             System.err.println("Attempting to decrypt: " + raw[1]);
             System.err.println("Attempting to decrypt: " + raw[2]);
         }
-
         return moves;
     }
     private void applyMove(int fromID, int toID) {
 
         Tube from = null, to = null;
-        for (Tube t : tubeList) {
+        for (Tube t : copyTubeList) {
             if (t.getName() == fromID) from = t;
             if (t.getName() == toID) to = t;
             if (from != null && to != null) break;
@@ -110,66 +118,30 @@ public class Simulator implements Pourable {
         pour(from, to);
     }
 
-    private void configTubeLayout(Map<String, Double> layoutSettings) {
-        layoutSettings.put("paneWidth", 800.0);
-        layoutSettings.put("spacing", 80.0);
-        layoutSettings.put("rowSpacing", 150.0);
-        layoutSettings.put("startX", 20.0);
-        layoutSettings.put("startY", 50.0);
-        layoutSettings.put("x", layoutSettings.get("startX"));
-        layoutSettings.put("y", layoutSettings.get("startY"));
-    }
-    private void setTubeDesign(Tube tube) {
 
-        // GUI
-        VBox container = tube.getContainer();
+    @Override
+    public List<Tube> createTube(AnchorPane ap, int tubeNum) {
 
-        container.setSpacing(2);
-        container.setPrefSize(60, 120);
-        container.setAlignment(Pos.BOTTOM_CENTER);
+        // generate tube dimensions
+        Map<String, Double> layoutSetting = new HashMap<>();
+        UtilityGUI.configTubeLayout(layoutSetting, ap);
 
-        highlightTube(tube, false);
-    }
-    private void setTubeLayout(Tube tube, Map<String, Double> layoutSetting) {
-        // GUI
-        // row warp
-        if (layoutSetting.get("x") + 60 > layoutSetting.get("paneWidth")) {
-            layoutSetting.put("x", layoutSetting.get("startX"));
-            layoutSetting.put("y", layoutSetting.get("y") + layoutSetting.get("rowSpacing"));
+        // deep copy tubes
+        List<Tube> copyTubeList = new ArrayList<>();
+        for (int i = 0; i < tubeNum; i++) {
+            Tube copy = origTubeList.get(i).cloneTube();
+
+            // modify tubes for GUI
+            UtilityGUI.setTubeDesign(copy);
+            UtilityGUI.setTubeLayout(copy, layoutSetting);
+            UtilityGUI.setTubeLabel(copy, ap);
+
+            copyTubeList.add(copy);
+            ap.getChildren().add(copy.getContainer());
         }
-        tube.getContainer().setLayoutX(layoutSetting.get("x"));
-        tube.getContainer().setLayoutY(layoutSetting.get("y"));
 
-        layoutSetting.put(("x"), layoutSetting.get("x") + layoutSetting.get("spacing"));
-    }
-    private void setTubeLabel(Tube tube, AnchorPane apMainPane) {
+        return copyTubeList;
 
-        Text label = new Text();
-        label.setText(String.valueOf(tube.getName()));
-        label.setLayoutX(tube.getContainer().getLayoutX());
-        label.setLayoutY(tube.getContainer().getLayoutY());
-        label.setFill(Color.GRAY);
-        apMainPane.getChildren().add(label);
     }
 
-    public void highlightTube(Tube tube, boolean highlight) {
-
-        if (highlight) {
-            tube.getContainer().setStyle("""
-                -fx-background-color: linear-gradient(to bottom, #e0e0e0cc, #ffffff33);
-                -fx-border-color: #0ADD08;
-                -fx-border-width: 4;
-                -fx-border-radius: 15;
-                -fx-background-radius: 15;
-            """);
-        } else {
-            tube.getContainer().setStyle("""
-                -fx-background-color: linear-gradient(to bottom, #e0e0e0cc, #ffffff33);
-                -fx-border-color: #999;
-                -fx-border-width: 4;
-                -fx-border-radius: 15;
-                -fx-background-radius: 15;
-            """);
-        }
-    }
 }

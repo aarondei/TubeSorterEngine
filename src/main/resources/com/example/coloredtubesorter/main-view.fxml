@@ -16,7 +16,7 @@
             <AnchorPane fx:id="apMainPane" prefHeight="320.0" prefWidth="740.0" style="-fx-background-color: white;" />
          </content>
       </ScrollPane>
-      <GridPane alignment="CENTER" layoutX="192.0" layoutY="430.0" prefHeight="90.0" prefWidth="504.0">
+      <GridPane fx:id="btnsGrid" alignment="CENTER" layoutX="192.0" layoutY="430.0" prefHeight="90.0" prefWidth="504.0">
         <columnConstraints>
           <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
           <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
@@ -61,12 +61,12 @@
             <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
          </rowConstraints>
          <children>
-            <Button mnemonicParsing="false" onAction="#colorOnClick" prefHeight="25.0" prefWidth="76.0" text="REDO" GridPane.halignment="CENTER" GridPane.rowIndex="2" />
-            <Button mnemonicParsing="false" onAction="#colorOnClick" prefHeight="25.0" prefWidth="76.0" text="SKIP" GridPane.halignment="CENTER" GridPane.rowIndex="1" />
-            <Button mnemonicParsing="false" onAction="#onSolveClicked" prefHeight="25.0" prefWidth="76.0" style="-fx-background-color: a2bffe;" text="SOLVE" GridPane.halignment="CENTER" />
+            <Button fx:id="btnRedo" mnemonicParsing="false" onAction="#colorOnClick" prefHeight="25.0" prefWidth="76.0" text="REDO" GridPane.halignment="CENTER" GridPane.rowIndex="2" />
+            <Button fx:id="btnSkip" mnemonicParsing="false" onAction="#colorOnClick" prefHeight="25.0" prefWidth="76.0" text="SKIP" GridPane.halignment="CENTER" GridPane.rowIndex="1" />
+            <Button fx:id="btnSolve" mnemonicParsing="false" onAction="#onSolveClicked" prefHeight="25.0" prefWidth="76.0" style="-fx-background-color: a2bffe;" text="SOLVE" GridPane.halignment="CENTER" />
          </children>
       </GridPane>
-      <Button layoutX="493.0" layoutY="384.0" mnemonicParsing="false" onAction="#onResetClick" text="X" />
-      <Button layoutX="279.0" layoutY="384.0" mnemonicParsing="false" onAction="#onSimulateClick" text="S" />
+      <Button fx:id="btnClear" layoutX="493.0" layoutY="384.0" mnemonicParsing="false" onAction="#onResetClick" text="X" />
+      <Button fx:id="btnSimulate" layoutX="279.0" layoutY="384.0" mnemonicParsing="false" onAction="#onSimulateClick" text="S" />
    </children>
 </AnchorPane>

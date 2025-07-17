@@ -25,7 +25,6 @@ public class Tube {
     public void fillLiquid(Rectangle rect) {
 
         if (isFull) {
-            System.out.println("Tube is full.");
             return;
         }
 
@@ -37,7 +36,6 @@ public class Tube {
     public Rectangle pourLiquid() {
 
         if (stackLiquidCount == 0) {
-            System.out.println("Tube is empty.");
             return null;
         }
 

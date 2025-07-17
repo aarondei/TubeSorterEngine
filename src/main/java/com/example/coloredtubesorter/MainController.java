@@ -2,141 +2,68 @@ package com.example.coloredtubesorter;
 
 import com.example.coloredtubesorter.Elements.ColorEnum;
 import com.example.coloredtubesorter.Elements.Tube;
+import com.example.coloredtubesorter.Logic.Creator;
 import com.example.coloredtubesorter.Logic.Simulation.Simulator;
 import com.example.coloredtubesorter.Logic.Sort.Sorter;
+import com.example.coloredtubesorter.Logic.UtilityGUI;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.VBox;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.text.Text;
 
 
-public class MainController extends BaseController {
+public class MainController extends BaseController implements Creator {
 
+    @FXML
+    private GridPane btnsGrid;
+
+    @FXML
+    private Button btnSolve;
+
+    @FXML
+    private Button btnRedo;
+    @FXML
+    private Button btnSkip;
+    @FXML
+    private Button btnClear;
+    @FXML
+    private Button btnSimulate;
     @FXML
     private TextField tfStatus;
     @FXML
     private AnchorPane apMainPane;
 
-    private int tubeNum;
-    private final List<Tube> tubeList = new ArrayList<>();
-    private int currentTubeIndex = 0;
+    private int tubeQty;
+    private List<Tube> tubeList;
 
+    private int currentTubeIndex = 0;
     private boolean isLocked = false;
     private String moveHistory = "";
 
     @Override
     public void setData(Object data) {
-        tubeNum = (Integer) data;
+        tubeQty = (Integer) data;
     }
 
     public void postInit() {
         tfStatus.setFocusTraversable(false);
         tfStatus.setMouseTransparent(true);
-        createTube();
-        highlightTube(tubeList.getFirst(), true);
+        tubeList = createTube(apMainPane, tubeQty);
+        UtilityGUI.borderTube(tubeList.getFirst(), true);
+        lockButton(btnSimulate);
     }
 
-    // TUBE SETUP METHODS
-    private void createTube() {
-
-        // generate tube dimensions
-        Map<String, Double> layoutSetting = new HashMap<>();
-        configTubeLayout(layoutSetting);
-
-        // create tubes
-        for (int i = 0; i < tubeNum; i++) {
-            Tube tube = new Tube();
-            setTubeDesign(tube);
-            setTubeLayout(tube, layoutSetting);
-            setTubeLabel(tube);
-
-            tubeList.add(tube);
-            apMainPane.getChildren().add(tube.getContainer());
-        }
-
-        // tubes now ready to be filled
-    }
-    private void configTubeLayout(Map<String, Double> layoutSettings) {
-        layoutSettings.put("paneWidth", apMainPane.getPrefWidth());
-        layoutSettings.put("spacing", 80.0);
-        layoutSettings.put("rowSpacing", 150.0);
-        layoutSettings.put("startX", 20.0);
-        layoutSettings.put("startY", 50.0);
-        layoutSettings.put("x", layoutSettings.get("startX"));
-        layoutSettings.put("y", layoutSettings.get("startY"));
-    }
-    private void setTubeDesign(Tube tube) {
-
-        // GUI
-        VBox container = tube.getContainer();
-
-        container.setSpacing(2);
-        container.setPrefSize(60, 120);
-        container.setAlignment(Pos.BOTTOM_CENTER);
-
-        highlightTube(tube, false);
-    }
-    private void setTubeLayout(Tube tube, Map<String, Double> layoutSetting) {
-        // GUI
-        // row warp
-        if (layoutSetting.get("x") + 60 > layoutSetting.get("paneWidth")) {
-            layoutSetting.put("x", layoutSetting.get("startX"));
-            layoutSetting.put("y", layoutSetting.get("y") + layoutSetting.get("rowSpacing"));
-        }
-        tube.getContainer().setLayoutX(layoutSetting.get("x"));
-        tube.getContainer().setLayoutY(layoutSetting.get("y"));
-
-        layoutSetting.put(("x"), layoutSetting.get("x") + layoutSetting.get("spacing"));
-    }
-    private void setTubeLabel(Tube tube) {
-        // GUI
-        Text label = new Text();
-        label.setText(String.valueOf(tube.getName()));
-        label.setLayoutX(tube.getContainer().getLayoutX());
-        label.setLayoutY(tube.getContainer().getLayoutY());
-        label.setFill(Color.GRAY);
-        apMainPane.getChildren().add(label);
-    }
-    public void highlightTube(Tube tube, boolean highlight) {
-
-        if (highlight) {
-            tube.getContainer().setStyle("""
-                -fx-background-color: linear-gradient(to bottom, #e0e0e0cc, #ffffff33);
-                -fx-border-color: #0ADD08;
-                -fx-border-width: 4;
-                -fx-border-radius: 15;
-                -fx-background-radius: 15;
-            """);
-        } else {
-            tube.getContainer().setStyle("""
-                -fx-background-color: linear-gradient(to bottom, #e0e0e0cc, #ffffff33);
-                -fx-border-color: #999;
-                -fx-border-width: 4;
-                -fx-border-radius: 15;
-                -fx-background-radius: 15;
-            """);
-        }
-    }
-    private Rectangle createLiquid(Color color) {
-
-        Rectangle rect = new Rectangle(45, 25, color);
-        rect.setArcWidth(10);
-        rect.setArcHeight(10);
-
-        return rect;
-    }
 
     @FXML
     public void colorOnClick(ActionEvent actionEvent) {
@@ -152,7 +79,7 @@ public class MainController extends BaseController {
         String colorName = clickedBtn.getText();
 
         Tube tube = tubeList.get(currentTubeIndex);
-        highlightTube(tube, true);
+        UtilityGUI.borderTube(tube, true);
 
         // non color handling
         switch (colorName) {
@@ -175,7 +102,7 @@ public class MainController extends BaseController {
             Color fxColor = logicColor.getColor();
 
             // create and tag rect
-            Rectangle liquid = createLiquid(fxColor);
+            Rectangle liquid = UtilityGUI.createLiquid(fxColor);
             liquid.setUserData(logicColor);
 
             // fill tube
@@ -187,38 +114,24 @@ public class MainController extends BaseController {
             System.err.println("Unknown color: " + colorName);
         }
     }
-    private void moveToNextTube(Tube currentTube) {
-        highlightTube(currentTube, false);
-
-        currentTubeIndex++;
-        if (currentTubeIndex < tubeList.size())
-            highlightTube(tubeList.get(currentTubeIndex), true);
-        else
-            currentTubeIndex--;
-    }
-    private void moveToPrevTube(Tube currentTube) {
-        highlightTube(currentTube, false);
-
-        currentTubeIndex--;
-        if (currentTubeIndex > -1)
-            highlightTube(tubeList.get(currentTubeIndex), true);
-        else
-            currentTubeIndex++;
-    }
 
     @FXML
     public void onSolveClicked(ActionEvent actionEvent) {
 
         if (isLocked) return;
 
-        // locks pane
+        // lock mechanism
         isLocked = true;
-        highlightTube(tubeList.get(currentTubeIndex), false);
+        lockButton(btnSolve);
+        lockButton(btnRedo);
+        lockButton(btnSkip);
+        lockButton(btnsGrid);
+        lockButton(btnSimulate);
+
+        UtilityGUI.borderTube(tubeList.get(currentTubeIndex), false);
 
         // PATHFINDING BEGINS HERE
         Sorter sorter = Sorter.getInstance(tubeList);
-
-        // path-find
         long start = System.currentTimeMillis();
         boolean solved = sorter.pathFind();
         long end = System.currentTimeMillis();
@@ -228,24 +141,26 @@ public class MainController extends BaseController {
 
         // measure BFS' used memory
         Runtime runtime = Runtime.getRuntime();
-        System.out.println("Used memory: " +
+        System.out.println("Used Memory: " +
                 (runtime.totalMemory() - runtime.freeMemory()) / (1024 * 1024) + " MB");
 
         // GUI results
-        tfStatus.setText(solved ? "Run: Success" : "Run: Failed");
         if (solved) {
             tfStatus.setStyle("""
                     -fx-background-color: #80ef80;
                     """);
 
-            // reconstruct winning move history
-//            simulate(sorter.extractHistory());
+            // auto simulate
+            tfStatus.setText("Simulating Path");
+            lockButton(btnSimulate);
             moveHistory = sorter.extractHistory();
+            simulate(moveHistory);
 
         } else {
             tfStatus.setStyle("""
                     -fx-background-color: #e54c38;
                     """);
+            tfStatus.setText("No Valid Move");
         }
 
         // free memory
@@ -254,6 +169,9 @@ public class MainController extends BaseController {
 
     public void onResetClick(ActionEvent actionEvent) {
 
+        if (isLocked) unlockButton(btnSimulate);
+
+        MainApplication.closeShell();
         apMainPane.getChildren().clear();
         tfStatus.clear();
         tfStatus.setFocusTraversable(false);
@@ -262,13 +180,18 @@ public class MainController extends BaseController {
         currentTubeIndex = 0;
         isLocked = false;
 
+        unlockButton(btnSolve);
+        unlockButton(btnRedo);
+        unlockButton(btnSkip);
+        unlockButton(btnsGrid);
+
         for (Tube t : tubeList) {
             t.resetTube();
-            highlightTube(t, false);
+            UtilityGUI.borderTube(t, false);
             apMainPane.getChildren().add(t.getContainer());
         }
 
-        highlightTube(tubeList.getFirst(), true);
+        UtilityGUI.borderTube(tubeList.getFirst(), true);
     }
 
     public void onSimulateClick(ActionEvent actionEvent) {
@@ -276,16 +199,84 @@ public class MainController extends BaseController {
         if (!isLocked) return;
 
         if (moveHistory.isEmpty()) throw new RuntimeException("Move history is missing.");
-        simulate(moveHistory);
+
+        Simulator simulator = Simulator.getInstance(tubeList, moveHistory);
+
+        tfStatus.setText("Simulation Running");
+        lockButton(btnSimulate);
+        simulator.restart(apMainPane);
+
+        simulator.setOnSimulationDone(() -> {
+            tfStatus.setText("Simulation Done");
+            unlockButton(btnSimulate);
+        });
     }
 
     private void simulate(String moves) {
 
-        // open shell windows
+        // open log window
         BaseController shell = MainApplication.openLog(moves);
 
         // run simulator
         Simulator simulator = Simulator.getInstance(tubeList, moves);
         simulator.simulate(apMainPane, (ShellController) shell);
+        simulator.setOnSimulationDone(() -> {
+            tfStatus.setText("Simulation Done");
+            unlockButton(btnSimulate);
+        });
     }
+
+
+    @Override
+    public List<Tube> createTube(AnchorPane ap, int tubeNum) {
+
+        // generate tube dimensions
+        Map<String, Double> layoutSetting = new HashMap<>();
+        UtilityGUI.configTubeLayout(layoutSetting, ap);
+
+        // create tubes
+        List<Tube> tubeList = new ArrayList<>();
+        for (int i = 0; i < tubeNum; i++) {
+            Tube tube = new Tube();
+
+            // modify tubes for GUI
+            UtilityGUI.setTubeDesign(tube);
+            UtilityGUI.setTubeLayout(tube, layoutSetting);
+            UtilityGUI.setTubeLabel(tube, ap);
+
+            tubeList.add(tube);
+            ap.getChildren().add(tube.getContainer());
+        }
+
+        return tubeList;
+    }
+    private void moveToNextTube(Tube currentTube) {
+
+        UtilityGUI.borderTube(currentTube, false);
+
+        currentTubeIndex++;
+        if (currentTubeIndex < tubeList.size())
+            UtilityGUI.borderTube(tubeList.get(currentTubeIndex), true);
+        else
+            currentTubeIndex--;
+    }
+    private void moveToPrevTube(Tube currentTube) {
+
+        UtilityGUI.borderTube(currentTube, false);
+
+        currentTubeIndex--;
+        if (currentTubeIndex > -1)
+            UtilityGUI.borderTube(tubeList.get(currentTubeIndex), true);
+        else
+            currentTubeIndex++;
+    }
+
+
+    private void lockButton(Node b) {
+        b.setDisable(true);
+    }
+    private void unlockButton(Node b) {
+        b.setDisable(false);
+    }
+
 }

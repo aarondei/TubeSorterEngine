@@ -16,7 +16,6 @@ public class Sorter implements Pourable {
     private Set<String> visitedStates = new HashSet<>();
 
     private StringBuilder log = new StringBuilder();
-    private List<Tube> finalConfig;
 
     private Sorter(List<Tube> tubeList) {
         this.tubeList = tubeList;
@@ -35,7 +34,6 @@ public class Sorter implements Pourable {
         visitedStates = new HashSet<>();
         log.setLength(0);
         log = new StringBuilder();
-        finalConfig = null;
     }
 
     public boolean pathFind() {
@@ -53,17 +51,16 @@ public class Sorter implements Pourable {
 
             // check if solved
             if (isSolved(s)) {
-                transcribeHistory(s.getMoveHistory());
-                transcribeState(s.getTubeConfig());
+                transcribeHistory(s.moveHistory());
                 return true;
             }
 
             // perform pouring
-            for (Tube from : s.getTubeConfig()) {
+            for (Tube from : s.tubeConfig()) {
 
                 if (from.isEmpty()) continue;
 
-                for (Tube to : s.getTubeConfig()) {
+                for (Tube to : s.tubeConfig()) {
 
                     // optimize
                     if (from == to) continue;
@@ -72,8 +69,8 @@ public class Sorter implements Pourable {
                     if (canPour(from, to) && isOverflowSafe(from, to)) {
 
                         // copy state
-                        List<Tube> tubeListCopyNewState = copyTubeList(s.getTubeConfig());
-                        List<Move> moveHistoryCopy = copyMoveHistory(s.getMoveHistory());
+                        List<Tube> tubeListCopyNewState = copyTubeList(s.tubeConfig());
+                        List<Move> moveHistoryCopy = copyMoveHistory(s.moveHistory());
 
                         // get tubes from copied state
                         Tube fromCopy = getTubeCopy(from.getName(), tubeListCopyNewState);
@@ -112,7 +109,7 @@ public class Sorter implements Pourable {
 
     private boolean isSolved(State s) {
 
-        for (Tube t : s.getTubeConfig()) {
+        for (Tube t : s.tubeConfig()) {
 
             if (t.isEmpty()) continue;
 
@@ -141,7 +138,7 @@ public class Sorter implements Pourable {
         // pruning that looks in the current tube list in advance to scout for same color, non-empty to tubes
         // prevents wasting of empty tubes
         ColorEnum fromTop = getRectColor(from.getStackTube().top());
-        for (Tube t : s.getTubeConfig()) {
+        for (Tube t : s.tubeConfig()) {
             // if from is not to, to is not full, to is not empty, top colors match
             if (t != from && !t.isFull() && !t.isEmpty()) {
                 ColorEnum tTop = getRectColor((t.getStackTube().top()));
@@ -175,7 +172,7 @@ public class Sorter implements Pourable {
     private String serializeState(State s) {
         StringBuilder sb = new StringBuilder();
 
-        for (Tube t : s.getTubeConfig()) {
+        for (Tube t : s.tubeConfig()) {
 
             if (t.isEmpty()) {
                 sb.append("EMPTY|");
@@ -189,32 +186,7 @@ public class Sorter implements Pourable {
         }
 
         return sb.toString();
-
-//        List<String> tubeStrings = new ArrayList<>();
-//
-//        for (Tube t : s.getTubeConfig()) {
-//            if (t.isEmpty()) {
-//                tubeStrings.add("EMPTY");
-//                continue;
-//            }
-//
-//            List<String> colors = new ArrayList<>();
-//            for (Rectangle r : t.getStackTube().getStackLayers()) {
-//                colors.add(getRectColor(r).name());
-//            }
-//
-//            // optional: sort colors in the tube (if order doesn't matter within tube)
-//            // Collections.sort(colors);
-//
-//            tubeStrings.add(String.join(",", colors));
-//        }
-//
-//        Collections.sort(tubeStrings); // ✨ canonical tube ordering
-//        return String.join("|", tubeStrings);
     }
-
-
-
 
     private void transcribeHistory(List<Move> moveList) {
 
@@ -228,12 +200,5 @@ public class Sorter implements Pourable {
     public String extractHistory() {
 
         return log.isEmpty() ? "No solution found." : log.toString();
-    }
-
-    private void transcribeState(List<Tube> tubes) {
-        finalConfig = tubes;
-    }
-    public List<Tube> extractState() {
-        return finalConfig;
     }
 }
