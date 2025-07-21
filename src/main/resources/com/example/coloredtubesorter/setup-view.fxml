@@ -6,19 +6,22 @@
 <?import javafx.scene.text.Font?>
 <?import javafx.scene.text.Text?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="500.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.coloredtubesorter.SetupController">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="550.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.coloredtubesorter.SetupController">
    <children>
-      <Text fill="#5b0acc" layoutX="285.0" layoutY="164.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Tube Sorter">
+      <Text fill="#5b0acc" layoutX="143.0" layoutY="187.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Tube Sorter Cheat Engine">
          <font>
             <Font name="Impact" size="50.0" />
          </font>
       </Text>
-      <Text layoutX="338.0" layoutY="241.0" strokeType="OUTSIDE" strokeWidth="0.0" text="How many tubes to sort?">
+      <Text fx:id="tfFrontText" layoutX="277.0" layoutY="280.0" strokeType="OUTSIDE" strokeWidth="0.0" text="How many tubes to sort?" textAlignment="CENTER" wrappingWidth="247.0">
          <font>
             <Font name="System Italic" size="14.0" />
          </font>
       </Text>
-      <TextField fx:id="tfTubeNum" alignment="CENTER" layoutX="281.0" layoutY="257.0" prefHeight="37.0" prefWidth="247.0" />
-      <Button fx:id="btnStart" layoutX="340.0" layoutY="351.0" mnemonicParsing="false" onAction="#onClick" prefHeight="36.0" prefWidth="129.0" text="Start" />
+      <TextField fx:id="tfTubeNum" alignment="CENTER" layoutX="277.0" layoutY="293.0" prefHeight="37.0" prefWidth="247.0">
+         <font>
+            <Font size="14.0" />
+         </font></TextField>
+      <Button layoutX="336.0" layoutY="390.0" mnemonicParsing="false" onAction="#onClick" prefHeight="36.0" prefWidth="129.0" text="Start" />
    </children>
 </AnchorPane>

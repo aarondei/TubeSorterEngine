@@ -1,16 +1,12 @@
 package com.example.coloredtubesorter.Elements;
 
-import javafx.scene.Node;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class Tube {
     private static int order = 1;
     private int name;
-    private List<Double> coordinates = new ArrayList<>();
 
     private boolean isFull = false;
     private int stackLiquidCount = 0;
@@ -53,30 +49,32 @@ public class Tube {
 
         return r;
     }
-    public List<Tube> cloneState(List<Tube> orig) {
-        List<Tube> copy = new ArrayList<>();
-        for (Tube t : orig) {
-            copy.add(cloneTube(t));
-        }
-        return copy;
-    }
-    private Tube cloneTube(Tube orig) {
+
+    public Tube cloneTube() {
         Tube copy = new Tube();
 
         // primitive fields
-        copy.name = orig.name;
-        copy.isFull = orig.isFull;
-        copy.stackLiquidCount = orig.stackLiquidCount;
+        copy.name = this.name;
+        copy.isFull = this.isFull;
+        copy.stackLiquidCount = this.stackLiquidCount;
 
         // deep copy
         copy.container = new VBox();
         copy.stackTube = new StackTube(copy.container);
 
-        for (Rectangle r : orig.stackTube.getStackLayers()) {
-            Rectangle newRect = new Rectangle(r.getWidth(), r.getHeight(), r.getFill());
-            copy.stackTube.push(newRect);
+        for (int i = this.getStackTube().getStackLayers().size() -1; i >= 0; i--)  {
+            Rectangle orig = this.getStackTube().getStackLayers().get(i);
+            copy.stackTube.push(cloneContent(orig));
         }
+
         return copy;
+    }
+    private Rectangle cloneContent(Rectangle orig) {
+        Rectangle newRect = new Rectangle(orig.getWidth(), orig.getHeight(), orig.getFill());
+        newRect.setArcWidth(10);
+        newRect.setArcHeight(10);
+        newRect.setUserData(ColorEnum.convertColorObj((Color) orig.getFill()));
+        return newRect;
     }
 
     // ABSTRACTED METHODS
@@ -85,9 +83,6 @@ public class Tube {
         return (stackLiquidCount == 0);
     }
     public int getLiquidCount() { return stackLiquidCount; }
-    public Rectangle peekTop() {
-        return stackTube.top();
-    }
 
     // GETTERS SETTERS
     public int getName() {
@@ -97,11 +92,10 @@ public class Tube {
         return container;
     }
     public StackTube getStackTube() { return stackTube; }
-    public List<Double> getCoordinates() {
-        return coordinates;
-    }
-    public void setCoordinates(Double x, Double y) {
-        coordinates.add(x);
-        coordinates.add(y);
+
+    public void resetTube() {
+        isFull = false;
+        stackLiquidCount = 0;
+        stackTube.resetStackTube();
     }
 }
