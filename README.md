@@ -1,5 +1,13 @@
-Colored tube sorter that sorts layers of liquid per tube.
-Tube creation limited to 6 tubes to save memory since pathfinding technique used is BFS.
+# Tube Sorter Engine
+
+A puzzle engine that sorts layers of liquid inside tubes.  
+Implements **Breadth-First Search (BFS)** to compute optimal moves.  
+
+**Features:**
+- Limits tube creation to **6 tubes** to optimize memory usage and performance.
+- Efficient state exploration using data structures to avoid redundant computations.
+
+**Technologies:** Java, JavaFX
 
 BEFORE
 ![BEFORE](images/before.png)
