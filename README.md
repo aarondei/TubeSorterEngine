@@ -9,6 +9,7 @@ Implements **Breadth-First Search (BFS)** to compute optimal moves.
 
 **Technologies:** Java, JavaFX
 
+**Demonstration:**
 BEFORE
 ![BEFORE](images/before.png)
 
